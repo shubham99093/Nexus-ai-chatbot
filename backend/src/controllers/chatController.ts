@@ -5,6 +5,11 @@ import * as chatService from '../services/chatService';
 import { streamChatCompletion } from '../services/openrouterService';
 import { AppError } from '../middleware/errorMiddleware';
 
+/** Strip HTML tags to prevent stored XSS */
+function sanitizeInput(input: string): string {
+  return input.replace(/<[^>]*>/g, '').trim();
+}
+
 const createChatSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
 });
@@ -109,7 +114,7 @@ export async function sendMessage(
       throw new AppError('Chat not found', 404);
     }
 
-    await chatService.addMessage(chatId, 'user', message);
+    await chatService.addMessage(chatId, 'user', sanitizeInput(message));
 
     const existingMessages = await chatService.getChatMessages(chatId);
 

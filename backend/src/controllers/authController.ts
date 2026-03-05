@@ -4,7 +4,13 @@ import * as authService from '../services/authService';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 });
 
 const loginSchema = z.object({
@@ -15,7 +21,7 @@ const loginSchema = z.object({
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, password } = registerSchema.parse(req.body);
-    const result = await authService.registerUser(email, password);
+    const result = await authService.registerUser(email, password, req.ip || 'unknown');
     res.status(201).json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -29,7 +35,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, password } = loginSchema.parse(req.body);
-    const result = await authService.loginUser(email, password);
+    const result = await authService.loginUser(email, password, req.ip || 'unknown');
     res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
